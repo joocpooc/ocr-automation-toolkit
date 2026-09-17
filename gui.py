@@ -339,8 +339,9 @@ class LairbotApp:
                     log_out()
                     break
 
+                party_names = [instances[0]["name"], instances[1]["name"], instances[3]["name"], instances[2]["name"]]
                 while stacked_retry < RETRY_LIMIT and self._bot_running:
-                    if search_words_stacked(["Minaamage", "Religeous", "Rafakillo", "fierybride"], 0, 449, 144, 611):
+                    if search_words_stacked(party_names, 0, 449, 144, 611):
                         print("Everyone connected, starting run...")
                         break
                     stacked_retry += 1

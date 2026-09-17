@@ -1007,7 +1007,7 @@ def main():
         
         # Step 3: Wait for all players to be connected
         while stacked_retry_count < retry_limit:
-            if search_words_stacked(["Minaamage", "Religeous", "Rafakillo", "Ragequiit"], 0, 467, 144, 629, 80):
+            if search_words_stacked(["Player1", "Player2", "Player3", "Player4"], 0, 467, 144, 629, 80):
                 print("Everyone connected, starting run...")
                 break  # Break out of the loop if all players are found
             stacked_retry_count += 1  # Increment the retry counter

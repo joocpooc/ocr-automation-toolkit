@@ -17,7 +17,7 @@ from game_actions import (
 )
 from ocr_utils import get_enemies_remaining_count, search_words_stacked
 
-PARTY_NAMES = ["Minaamage", "Religeous", "Rafakillo", "fierybride"]
+PARTY_NAMES = [instances[0]["name"], instances[1]["name"], instances[3]["name"], instances[2]["name"]]
 PARTY_NAMES_REGION = (0, 449, 144, 611)
 
 
