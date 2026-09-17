@@ -34,8 +34,21 @@ pip install -r requirements.txt
 Edit [`config.py`](config.py) to match your setup:
 
 - `MONITOR_INDEX` — which monitor (as reported by `screeninfo`) the emulator windows are on.
-- `instances` — list of emulator instances (window title + display name). Their ADB IPs are auto-detected at runtime and persisted to `settings.json` (created next to the script/exe on first run), so you don't need to hardcode IPs here.
 - `HOLD_MULTIPLIER` / `RETRY_LIMIT` — timing/retry tuning.
+
+Per-instance details (IPs, window titles, display names) are personal to your setup and are **not** hardcoded in `config.py` — they're loaded at runtime from `settings.json`, which lives next to the script/exe and is gitignored. Without one, generic placeholders (`Instance 1`, `Instance 2`, ...) and loopback defaults are used, and IPs get filled in automatically the first time you use **Auto-detect IPs** in the GUI.
+
+To pre-set your own instance names/window titles (not editable from the GUI), create `settings.json` in the project root:
+
+```json
+{
+  "ips": ["127.0.0.1:5585", "127.0.0.1:5555", "127.0.0.1:5575", "127.0.0.1:5595", "127.0.0.1:5605"],
+  "window_titles": ["BlueStacks App Player 1", "BlueStacks App Player 2", "BlueStacks App Player 3", "BlueStacks App Player 4", "BlueStacks App Player 5"],
+  "names": ["Alice", "Bob", "Carol", "Dave", "Eve"]
+}
+```
+
+`ips` is also rewritten automatically by **Connect BlueStacks** / **Auto-detect IPs**, and `serials` (used for auto-detection) is added there too — none of it should ever be committed.
 
 ### Calibrate the OCR search boxes
 

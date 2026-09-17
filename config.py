@@ -28,32 +28,46 @@ _DEFAULT_IPS = [
     "127.0.0.1:5605",
 ]
 
-def _load_ips():
+_NUM_INSTANCES = 5
+_DEFAULT_NAMES = [f"Instance {i + 1}" for i in range(_NUM_INSTANCES)]
+_DEFAULT_WINDOW_TITLES = [f"BlueStacks App Player {i + 1}" for i in range(_NUM_INSTANCES)]
+
+# Real IPs/names/window titles are personal to each setup, so they're never
+# hardcoded here - they're read from settings.json (gitignored, lives next to
+# the script/exe) if present, falling back to generic placeholders otherwise.
+def _load_settings():
     if os.path.exists(SETTINGS_FILE):
         try:
             with open(SETTINGS_FILE) as f:
-                return json.load(f).get("ips", _DEFAULT_IPS)
+                return json.load(f)
         except Exception:
             pass
-    return list(_DEFAULT_IPS)
+    return {}
+
+_settings = _load_settings()
 
 instances = [
-    {"ip": "", "window_title": "BlueStacks App Player 3", "name": "Minaamage"},
-    {"ip": "", "window_title": "BlueStacks App Player 1", "name": "Religeous"},
-    {"ip": "", "window_title": "BlueStacks App Player 2", "name": "Fierybride"},
-    {"ip": "", "window_title": "BlueStacks App Player 4", "name": "Rafakillo"},
-    {"ip": "", "window_title": "BlueStacks App Player 5", "name": "Iscataol"},
+    {
+        "ip": "",
+        "window_title": _settings.get("window_titles", _DEFAULT_WINDOW_TITLES)[i]
+            if i < len(_settings.get("window_titles", _DEFAULT_WINDOW_TITLES)) else _DEFAULT_WINDOW_TITLES[i],
+        "name": _settings.get("names", _DEFAULT_NAMES)[i]
+            if i < len(_settings.get("names", _DEFAULT_NAMES)) else _DEFAULT_NAMES[i],
+    }
+    for i in range(_NUM_INSTANCES)
 ]
 
 def _apply_ips(ips):
     for i, inst in enumerate(instances):
         inst["ip"] = ips[i] if i < len(ips) else ""
 
-_apply_ips(_load_ips())
+_apply_ips(_settings.get("ips", _DEFAULT_IPS))
 
 
 def save_ips(ips):
-    """Persist IPs to settings.json and update instances in memory."""
+    """Persist IPs to settings.json (merging with any existing keys) and update instances in memory."""
     _apply_ips(ips)
+    existing = _load_settings()
+    existing["ips"] = ips
     with open(SETTINGS_FILE, "w") as f:
-        json.dump({"ips": ips}, f, indent=2)
+        json.dump(existing, f, indent=2)
