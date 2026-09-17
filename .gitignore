@@ -3,3 +3,5 @@ __pycache__/
 build/
 dist/
 debug_*.png
+settings.json
+gold_state.json
