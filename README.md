@@ -37,6 +37,24 @@ Edit [`config.py`](config.py) to match your setup:
 - `instances` — list of emulator instances (window title + display name). Their ADB IPs are auto-detected at runtime and persisted to `settings.json` (created next to the script/exe on first run), so you don't need to hardcode IPs here.
 - `HOLD_MULTIPLIER` / `RETRY_LIMIT` — timing/retry tuning.
 
+### Calibrate the OCR search boxes
+
+All state detection (world map check, boss name, enemies-remaining counter, dialog buttons, party-member names, etc.) reads a **fixed pixel region** of the screen and OCRs whatever is inside it. Those regions are hardcoded as absolute `(top_left_x, top_left_y, bottom_right_x, bottom_right_y)` coordinates on the monitor selected by `MONITOR_INDEX`, so they only line up if your emulator windows are positioned/sized exactly like the original setup. **On a different resolution, monitor arrangement, or window layout, every box needs to be re-measured before the tool will detect anything correctly.**
+
+Where they live:
+
+- **`ocr_utils.py`** — `get_enemies_remaining()` (fixed region) and `get_enemies_remaining_count(top_left_x=..., top_left_y=..., bottom_right_x=..., bottom_right_y=...)` (defaults, overridable per call).
+- **`gui.py`** — inline coordinates passed to `search_words(...)` / `search_words_stacked(...)` for things like the world-map load check, the "FORCE START" lobby check, and the connected-party-names check.
+- **`game_actions.py`** — inline coordinates passed to `search_boss_name(...)`, `search_return_to_towne(...)`, and `search_words(["EXIT"], ...)` for boss identification and dialog/navigation buttons.
+
+How to re-measure a box:
+
+1. Take a full screenshot of the target monitor (or use `print_monitor_info()` from `bot_setup.py` to confirm the monitor's origin/resolution first).
+2. Find the pixel coordinates of the top-left and bottom-right corners of the text/button you want detected, relative to that monitor's origin.
+3. Update the corresponding call site above with the new `(top_left_x, top_left_y, bottom_right_x, bottom_right_y)` values.
+4. Re-run and check the generated `debug_*.png` files (saved next to the script — gitignored) to confirm the crop actually contains the expected text before trusting the OCR result.
+5. For the enemies-remaining counter specifically, `test_enemies.py` is a tight loop for iterating on the region/threshold without going through the full GUI flow.
+
 ## Usage
 
 ### Run from source
