@@ -1,3 +1,5 @@
+import random
+import string
 import subprocess
 import time
 import threading
@@ -160,7 +162,7 @@ def host_game():
     tap_on_instance(instances[0]["ip"], 333, 110)
     tap_on_instance(instances[0]["ip"], 830, 310)
     tap_on_instance(instances[0]["ip"], 108, 484)
-    send_text(instances[0]["ip"], "aqw")
+    send_text(instances[0]["ip"], "".join(random.choices(string.ascii_lowercase, k=3)))
     send_keystroke(instances[0]["ip"], 66)
     time.sleep(1)
     tap_on_instance(instances[0]["ip"], 448, 487)

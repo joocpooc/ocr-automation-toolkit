@@ -1,3 +1,5 @@
+import random
+import string
 import time
 import threading
 
@@ -9,6 +11,11 @@ from ocr_utils import (
 import stop_flag
 
 
+def _random_room_password(length=3):
+    """Generate a fresh random lobby password so none is hardcoded/static."""
+    return "".join(random.choices(string.ascii_lowercase, k=length))
+
+
 def host_game():
     tap_on_instance(instances[0]["ip"], 773, 60)
     time.sleep(0.1) #2
@@ -17,7 +24,7 @@ def host_game():
     tap_on_instance(instances[0]["ip"], 444, 147)
     tap_on_instance(instances[0]["ip"], 1107, 413)
     tap_on_instance(instances[0]["ip"], 144, 645)
-    send_text(instances[0]["ip"], "aqw")
+    send_text(instances[0]["ip"], _random_room_password())
     send_keystroke(instances[0]["ip"], 66)
     time.sleep(0.2) #1
     tap_on_instance(instances[0]["ip"], 597, 649)
@@ -32,7 +39,7 @@ def host_game_map2():
         tap_on_instance(instances[0]["ip"], 444, 147)
     tap_on_instance(instances[0]["ip"], 913, 413)
     tap_on_instance(instances[0]["ip"], 144, 645)
-    send_text(instances[0]["ip"], "aqw")
+    send_text(instances[0]["ip"], _random_room_password())
     send_keystroke(instances[0]["ip"], 66)
     time.sleep(1)
     tap_on_instance(instances[0]["ip"], 597, 649)
@@ -48,7 +55,7 @@ def host_game_map3():
             tap_on_instance(instances[0]["ip"], 444, 147)
     tap_on_instance(instances[0]["ip"], 913, 512)
     tap_on_instance(instances[0]["ip"], 144, 645)
-    send_text(instances[0]["ip"], "aqw")
+    send_text(instances[0]["ip"], _random_room_password())
     send_keystroke(instances[0]["ip"], 66)
     time.sleep(1)
     tap_on_instance(instances[0]["ip"], 597, 649)
