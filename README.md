@@ -23,6 +23,19 @@ Python toolkit for screen-reading automation: OCR-based state detection (OpenCV/
 - **ADB (Android Debug Bridge)** available on your `PATH`.
 - An Android emulator (e.g. BlueStacks) with one or more instances running, each with ADB debugging enabled.
 
+### Recommended specs
+
+Running several Android emulator instances at once (5 by default) is the main resource cost here — the OCR/ADB overhead on top of that is comparatively light.
+
+| | Minimum (1–2 instances) | Recommended (5 instances) |
+|---|---|---|
+| CPU | Quad-core, VT-x/AMD-V virtualization enabled | 8+ cores / threads (modern desktop CPU) |
+| RAM | 8 GB | 32 GB |
+| Storage | Any (SSD preferred) | SSD — multiple emulator instances are disk-heavy on boot |
+| GPU | Integrated is fine | Dedicated GPU improves per-instance render smoothness |
+
+Scale roughly linearly if you configure more or fewer instances in [`config.py`](config.py). Make sure hardware virtualization (Intel VT-x / AMD-V) is enabled in BIOS — BlueStacks needs it and performance degrades badly without it.
+
 ### Install
 
 ```powershell
