@@ -1,0 +1,10 @@
+pytesseract
+Pillow
+mss
+screeninfo
+numpy
+opencv-python
+fuzzywuzzy
+python-Levenshtein
+requests
+pyinstaller
