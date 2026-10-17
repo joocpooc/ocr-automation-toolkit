@@ -19,6 +19,7 @@ else:
 
 STATE_FILE    = os.path.join(_BASE_DIR, "gold_state.json")
 SETTINGS_FILE = os.path.join(_BASE_DIR, "settings.json")
+BLESSING_FILE = os.path.join(_BASE_DIR, "blessing_state.json")
 
 _DEFAULT_IPS = [
     "127.0.0.1:5585",

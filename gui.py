@@ -265,7 +265,9 @@ class LairbotApp:
             host_game, host_game_map2, host_game_map3, join_game, invite, battle, mob_clear, navigate_to_top,
             first_boss_battle, second_boss_battle, final_boss_battle,
             loot, potspam, use_buffs, use_skills, log_out, clear_inv, run_map2_dungeon, run_map3_dungeon,
+            claim_blessing,
         )
+        import blessing
 
         try:
             log_dir = r"C:\ProgramData\BlueStacks_nxt\Logs"
@@ -288,6 +290,7 @@ class LairbotApp:
 
             inv_counter = 0
             selected_map = self._map_var.get()
+            print(blessing.status())
 
             while self._bot_running:
                 search_retry  = 0
@@ -307,6 +310,8 @@ class LairbotApp:
                     print("World Map not found. Stopping.")
                     log_out()
                     break
+
+                blessing.maybe_claim(claim_blessing)
 
                 if selected_map == "Map 2":
                     host_game_map2()

@@ -354,6 +354,14 @@ def final_boss_battle():
             respawn()
 
 
+def claim_blessing():
+    """Claim the daily blessing on all instances. Called from the World Map screen."""
+    for x, y in [(638, 47), (212, 49), (1136, 395), (640, 609), (640, 609), (49, 48)]:
+        tap_all_instances(instances, x, y)
+        time.sleep(0.5)
+    return True
+
+
 def log_out():
     tap_all_instances(instances, 37, 36)
     time.sleep(0.4)

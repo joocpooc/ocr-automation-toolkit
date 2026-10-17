@@ -5,3 +5,4 @@ dist/
 debug_*.png
 settings.json
 gold_state.json
+blessing_state.json
