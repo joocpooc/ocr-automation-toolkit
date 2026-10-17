@@ -179,9 +179,9 @@ def search_words_stacked(target_texts, top_left_x, top_left_y, bottom_right_x, b
     return False
 
 
-def search_boss_name(top_left_x, top_left_y, bottom_right_x, bottom_right_y):
+def search_boss_name(top_left_x, top_left_y, bottom_right_x, bottom_right_y, attempts=5):
     """Return 'zori', 'auros', 'platonius', or None. One screenshot per attempt, all three checked."""
-    for attempt in range(5):
+    for attempt in range(attempts):
         if attempt > 0:
             time.sleep(0.05)
         image = _grab_region(top_left_x, top_left_y, bottom_right_x, bottom_right_y)

@@ -9,6 +9,31 @@ from ocr_utils import (
     search_words, search_boss_name, search_return_to_towne, get_enemies_remaining_count,
 )
 import stop_flag
+from watcher import Watcher
+
+
+BOSS_NAME_REGION = (375, 431, 852, 459)
+TOWNE_REGION = (409, 823, 725, 866)
+ZORI_GRACE_SECONDS = 10  # first boss ends if Zori isn't seen for this long
+
+
+def _read_boss():
+    """One quick read for the watcher thread: boss name or None (no TOWNE check, cheaper)."""
+    return search_boss_name(*BOSS_NAME_REGION, attempts=1)
+
+
+def _read_boss_or_towne():
+    """One quick read for the watcher thread: boss name, else 'towne', else None."""
+    boss = search_boss_name(*BOSS_NAME_REGION, attempts=1)
+    if boss:
+        return boss
+    if search_return_to_towne(*TOWNE_REGION):
+        return "towne"
+    return None
+
+
+def _read_towne():
+    return "towne" if search_return_to_towne(*TOWNE_REGION) else None
 
 
 def _random_room_password(length=3):
@@ -131,13 +156,13 @@ def use_skills2():
 
 def run_map2_dungeon():
     tap_on_instance(instances[0]["ip"], 636, 593)
-    while True:
-        stop_flag.check()
-        if search_words(["EXIT"], 437, 800, 602, 860, 70):
-            print("EXIT found, dungeon complete.")
-            break
-        use_buffs()
-        use_skills2()
+    read_exit = lambda: "exit" if search_words(["EXIT"], 437, 800, 602, 860, 70) else None
+    with Watcher(read_exit, name="map2 exit"):
+        while True:
+            stop_flag.check()
+            use_buffs()
+            use_skills2()
+    print("EXIT found, dungeon complete.")
     hold_click_all_instances(instances, 141, 535, 800)
     loot()
     hold_click_all_instances(instances, 95, 681, 1600)
@@ -159,36 +184,25 @@ def joinback():
 
 
 def _battle_until_enemies_at_most(threshold, label):
-    consecutive = 0
-    while True:
-        stop_flag.check()
+    def read_cleared():
         count = get_enemies_remaining_count()
-        if count is not None and count <= threshold:
-            consecutive += 1
-            print(f"{label} candidate ({consecutive}/3): enemies={count}")
-            if consecutive >= 3:
-                print(f"{label} confirmed.")
-                return
-        else:
-            consecutive = 0
-        use_buffs()
-        use_skills2()
+        return "cleared" if count is not None and count <= threshold else None
+
+    with Watcher(read_cleared, confirmations=3, name=label):
+        while True:
+            stop_flag.check()
+            use_buffs()
+            use_skills2()
+    print(f"{label} confirmed.")
 
 
 def _battle_until_return_to_towne():
-    consecutive = 0
-    while True:
-        stop_flag.check()
-        if search_return_to_towne(409, 823, 725, 866):
-            consecutive += 1
-            print(f"RETURN TO TOWNE candidate ({consecutive}/3).")
-            if consecutive >= 3:
-                print("RETURN TO TOWNE confirmed, dungeon complete.")
-                return
-        else:
-            consecutive = 0
-        use_buffs()
-        use_skills2()
+    with Watcher(_read_towne, confirmations=3, name="return to towne"):
+        while True:
+            stop_flag.check()
+            use_buffs()
+            use_skills2()
+    print("RETURN TO TOWNE confirmed, dungeon complete.")
 
 
 def run_map3_dungeon():
@@ -238,14 +252,8 @@ def battle(repetitions):
         use_skills()
 
 
-def _confirm_next_boss():
-    time.sleep(0.5)
-    boss2 = search_boss_name(375, 431, 852, 459)
-    if boss2 in ("platonius", "auros"):
-        print("Zori dead (confirmed)")
-        return True
-    print(f"Boss confirmation failed ({boss2}), ignoring.")
-    return False
+# Route walked each mob-clear loop: (x, y, hold ms)
+_MOB_ROUTE = [(23, 595, 1000), (152, 553, 3300), (187, 647, 2800), (35, 587, 1800)]
 
 
 def mob_clear():
@@ -253,107 +261,50 @@ def mob_clear():
     print("Starting mob clearing...")
     total_fail_count = 0
 
-    while True:
-        stop_flag.check()
-        boss = search_boss_name(375, 431, 852, 459)
-        if boss in ("platonius", "auros"):
-            if _confirm_next_boss():
+    # Zori is trusted on one read; Platonius/Auros need two in a row to rule out misreads.
+    with Watcher(_read_boss, confirmations={"platonius": 2, "auros": 2}, name="mob clear") as w:
+        while True:
+            for i, (x, y, ms) in enumerate(_MOB_ROUTE):
+                if i:
+                    respawn()
+                hold_click_all_instances(instances, x, y, ms)
+                battle(1)
+                respawn()
+            print("'Zori Kurn' NOT found. Restarting loop.")
+
+            total_fail_count += 1
+            if total_fail_count == 5:
+                hold_click_all_instances(instances, 93, 519, 3800)
+            if total_fail_count >= 15:
                 break
-        if search_return_to_towne(410, 823, 758, 866):
-            break
 
-        hold_click_all_instances(instances, 23, 595, 1000)
-        battle(1)
+    if w.result == "zori":
+        print("Found 'Zori Kurn'. Stopping mob clearing.")
         respawn()
-
-        boss = search_boss_name(375, 431, 852, 459)
-        if boss == "zori":
-            print("Found 'Zori Kurn'. Stopping mob clearing.")
-            break
-        if boss in ("platonius", "auros"):
-            if _confirm_next_boss():
-                break
-        if search_return_to_towne(409, 823, 725, 866):
-            break
-
-        respawn()
-        hold_click_all_instances(instances, 152, 553, 3300)
-        battle(1)
-        respawn()
-
-        boss = search_boss_name(375, 431, 852, 459)
-        if boss == "zori":
-            print("Found 'Zori Kurn'. Stopping mob clearing.")
-            respawn()
-            break
-        if boss in ("platonius", "auros"):
-            if _confirm_next_boss():
-                break
-        if search_return_to_towne(409, 823, 725, 866):
-            break
-
-        respawn()
-        hold_click_all_instances(instances, 187, 647, 2800)
-        battle(1)
-        respawn()
-
-        boss = search_boss_name(375, 431, 852, 459)
-        if boss == "zori":
-            print("Found 'Zori Kurn'. Stopping mob clearing.")
-            respawn()
-            break
-        if boss in ("platonius", "auros"):
-            if _confirm_next_boss():
-                break
-        if search_return_to_towne(409, 823, 725, 866):
-            break
-
-        respawn()
-        hold_click_all_instances(instances, 35, 587, 1800)
-        battle(1)
-        respawn()
-
-        boss = search_boss_name(375, 431, 852, 459)
-        if boss == "zori":
-            print("Found 'Zori Kurn'. Stopping mob clearing.")
-            respawn()
-            break
-        print("'Zori Kurn' NOT found. Restarting loop.")
-
-        total_fail_count += 1
-        if total_fail_count == 5:
-            hold_click_all_instances(instances, 93, 519, 3800)
-        if total_fail_count >= 15:
-            break
 
 
 def first_boss_battle():
     stop_flag.check()
     print("Fighting First Boss")
-    fail_count = 0
+    # Time-based grace so a dead reader character has time to respawn and rejoin;
+    # the clock resets every time Zori is seen.
+    last_zori = time.monotonic()
 
-    while True:
-        stop_flag.check()
-        battle(1)
-        respawn()
-        tap_all_instances(instances, 696, 87)
+    with Watcher(_read_boss, stop_on={"auros", "platonius"}, name="first boss") as w:
+        while True:
+            stop_flag.check()
+            battle(1)
+            respawn()
+            tap_all_instances(instances, 696, 87)
 
-        boss = search_boss_name(375, 431, 852, 459)
-        if boss == "auros":
-            print("Auros Kurn detected, exiting first boss battle.")
-            break
-        if boss == "platonius":
-            print("Platonius spawned, moving on")
-            break
-        if boss != "zori":
-            fail_count += 1
-            print(f"'Zori Kurn' NOT found. Failure count: {fail_count}")
-
-        if fail_count >= 3:
-            print("Failed to detect 'Zori Kurn' twice in a row. Ending battle.")
-            break
-        if search_return_to_towne(409, 823, 725, 866):
-            break
+            if "zori" in w.drain():
+                last_zori = time.monotonic()
+                continue
+            unseen = time.monotonic() - last_zori
+            print(f"'Zori Kurn' NOT seen for {unseen:.1f}s.")
+            if unseen >= ZORI_GRACE_SECONDS:
+                print(f"'Zori Kurn' not seen for {ZORI_GRACE_SECONDS}s. Ending battle.")
+                break
 
 
 def second_boss_battle():
@@ -362,55 +313,45 @@ def second_boss_battle():
     fail_count = 0
     tapped_once = False
 
-    while True:
-        stop_flag.check()
-        tap_all_instances(instances, 640, 413)
-        hold_click_all_instances(instances, 107, 675, 1000)
-        battle(1)
-        respawn()
+    with Watcher(_read_boss_or_towne, stop_on={"platonius", "towne"}, name="second boss") as w:
+        while True:
+            stop_flag.check()
+            tap_all_instances(instances, 640, 413)
+            hold_click_all_instances(instances, 107, 675, 1000)
+            battle(1)
+            respawn()
 
-        boss = search_boss_name(375, 431, 852, 459)
-        if boss == "platonius":
-            print("Platonius spawned, moving on")
-            break
-        if boss != "auros":
-            fail_count += 1
-            print(f"'Auros Kurn' NOT found. Failure count: {fail_count}")
-        else:
-            fail_count = 0
-            print("'Auros Kurn' found. Continuing the battle.")
-        if search_return_to_towne(409, 823, 725, 866):
-            break
-
-        if fail_count >= 3:
-            boss = search_boss_name(375, 431, 852, 459)
-            if boss == "platonius":
-                print("Platonius spawned, moving on")
-                break
-            if not tapped_once:
-                print("Performing reset actions...")
-                use_buffs()
-                hold_click_all_instances(instances, 112, 523, 3000)
-                battle(1)
-                hold_click_all_instances(instances, 112, 657, 3000)
-                tapped_once = True
+            reads = w.drain()
+            if "auros" in reads:
                 fail_count = 0
-            else:
-                print("Exiting loop after second set of failures.")
-                break
+                print("'Auros Kurn' found. Continuing the battle.")
+            elif reads:
+                fail_count += 1
+                print(f"'Auros Kurn' NOT found. Failure count: {fail_count}")
+
+            if fail_count >= 3:
+                if not tapped_once:
+                    print("Performing reset actions...")
+                    use_buffs()
+                    hold_click_all_instances(instances, 112, 523, 3000)
+                    battle(1)
+                    hold_click_all_instances(instances, 112, 657, 3000)
+                    tapped_once = True
+                    fail_count = 0
+                    w.drain()
+                else:
+                    print("Exiting loop after second set of failures.")
+                    break
 
 
 def final_boss_battle():
     stop_flag.check()
     print("Fighting Final Boss")
-    fail_count = 0
-    while True:
-        stop_flag.check()
-        if search_return_to_towne(409, 823, 725, 866) or fail_count == 20:
-            break
-        fail_count += 1
-        battle(1)
-        respawn()
+    with Watcher(_read_towne, name="final boss"):
+        for _ in range(20):
+            stop_flag.check()
+            battle(1)
+            respawn()
 
 
 def log_out():
